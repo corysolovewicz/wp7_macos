@@ -5,7 +5,7 @@
 
 By default, macOS Internet Connection Sharing (ICS):
 
-- **Only shares internet on the `192.168.2.0/24` subnet**
+- **Only shares internet on the 192.168.2.0/24 subnet**
 - **Cannot be configured** to use custom subnets via the GUI
 - **Assigns IPs via DHCP**, which does not work with the WiFi Pineapple MK7's default static IP configuration
 - **Breaks compatibility** with the Pineapple’s expected interface at `172.16.42.1/24`
@@ -64,17 +64,19 @@ You’ll be presented with a menu to:
 
 - During wireless red teaming or penetration tests  
 - When using the WiFi Pineapple MK7 as a rogue AP or MITM relay  
-- On macOS systems that must route traffic through a VPN  
 - When you want clean setup/teardown without rebooting or manual configuration
+- On macOS systems that must route traffic through a VPN  
 
 ---
 
 ## 📦 Requirements
 
 - macOS (tested on Monterey, Ventura, Sonoma, Sequoia)  
-- Any VPN that creates a tunnel interface (`utunX`, `ipsecX`)  
 - WiFi Pineapple MK7 (default config)  
 - Admin/root privileges
+
+## Optional
+- Any VPN that creates a tunnel interface (`utunX`, `ipsecX`)  
 
 ---
 
@@ -90,5 +92,8 @@ To fully undo changes:
   - Clean up `/etc/pf.anchors/com.pineapple.nat`
 
 ---
+[Github Repo for wp7_macos.sh](https://github.com/corysolovewicz/wp7_macos)
+
+[WiFi Pineapple MK7 Download Portal - wp7.sh](https://downloads.hak5.org/pineapple/mk7)
 
 For more info, visit [https://hak5.org](https://hak5.org)
