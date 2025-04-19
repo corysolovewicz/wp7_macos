@@ -6,7 +6,6 @@
 # Usage:
 # chmod +x wp7_macos.sh 
 # sudo ./wp7_macos.sh
-
 wpver=7.0
 
 PINEAPPLE_SUBNET="172.16.42.0/24"
@@ -69,15 +68,14 @@ function banner {
 
 function description {
   echo "====================================================="
-  echo "    WiFi Pineapple ICS + VPN (macOS only)"
+  echo "    WiFi Pineapple ICS + VPN (macOS only)            "
   echo "====================================================="
 }
 
 function detect_pineapple_interface {
   ifconfig | awk '
     /^[a-z]/ { iface=$1 }
-    /ether 00:13:37/ { print iface }
-  ' | tr -d ':'
+    /ether 00:13:37/ { print iface }' | tr -d ':'
 }
 
 function detect_vpn_interface {
@@ -113,10 +111,56 @@ function start_ics {
     fi
   fi
 
+  echo "[*] Finding network service for Pineapple interface..."
+  PINEAPPLE_SERVICE=$(networksetup -listnetworkserviceorder | \
+    grep -B1 "Device: $PINEAPPLE_IF" | head -1 | sed -E 's/^.*\) (.*)$/\1/')
+
+  if [[ -z "$PINEAPPLE_SERVICE" ]]; then
+    echo "[!] Could not find network service name for $PINEAPPLE_IF"
+    return
+  fi
+  echo "[+] Pineapple service name: '$PINEAPPLE_SERVICE'"
+
+  echo "[*] Configuring static IP for $PINEAPPLE_SERVICE..."
+  sudo networksetup -setmanual "$PINEAPPLE_SERVICE" 172.16.42.42 255.255.255.0 172.16.42.1
+  sudo networksetup -setdnsservers "$PINEAPPLE_SERVICE" 172.16.42.1
+
+  echo "[*] Reordering network services (placing '$PINEAPPLE_SERVICE' last)..."
+
+  ALL_SERVICES=()
+  while IFS= read -r line; do
+    [[ -z "$line" || "$line" == "An asterisk (*) denotes that a network service is disabled." ]] && continue
+    SERVICE_NAME=$(echo "$line" | sed 's/^\* //')
+    ALL_SERVICES+=("$SERVICE_NAME")
+  done < <(networksetup -listallnetworkservices)
+
+  SERVICE_FOUND=0
+  REORDERED_SERVICES=()
+  for svc in "${ALL_SERVICES[@]}"; do
+    if [[ "$svc" == "$PINEAPPLE_SERVICE" ]]; then
+      SERVICE_FOUND=1
+      continue
+    fi
+    REORDERED_SERVICES+=("\"$svc\"")
+  done
+
+  if [[ "$SERVICE_FOUND" -eq 0 ]]; then
+    echo "[!] '$PINEAPPLE_SERVICE' not found in service list. Skipping reorder."
+  else
+    REORDERED_SERVICES+=("\"$PINEAPPLE_SERVICE\"")
+    ORDER_CMD="sudo networksetup -ordernetworkservices ${REORDERED_SERVICES[*]}"
+    echo "[*] Executing: $ORDER_CMD"
+    if eval "$ORDER_CMD"; then
+      echo "[+] Network services reordered successfully."
+    else
+      echo "[!] Failed to reorder network services. Check service names manually."
+    fi
+  fi
+
   echo "[*] Enabling IP forwarding..."
   sudo sysctl -w net.inet.ip.forwarding=1
 
-  echo "[*] Assigning static IP $PINEAPPLE_HOST_IP to $PINEAPPLE_IF..."
+  echo "[*] Assigning static IP $PINEAPPLE_HOST_IP to $PINEAPPLE_IF (interface)..."
   sudo ifconfig "$PINEAPPLE_IF" inet "$PINEAPPLE_HOST_IP" netmask "$NETMASK" up
 
   echo "[*] Writing PF NAT rules..."
@@ -143,7 +187,6 @@ EOF
 
 function stop_ics {
   echo "[*] Reverting ICS setup..."
-
   echo "[*] Disabling IP forwarding..."
   sudo sysctl -w net.inet.ip.forwarding=0
 
@@ -151,18 +194,19 @@ function stop_ics {
   PINEAPPLE_IF=$(detect_pineapple_interface)
   if [[ -n "$PINEAPPLE_IF" ]]; then
     echo "[*] Removing IP from $PINEAPPLE_IF..."
-    sudo ifconfig "$PINEAPPLE_IF" inet 0.0.0.0
+    sudo ifconfig "$PINEAPPLE_IF" inet 0.0.0.0 remove
   fi
 
-  echo "[*] Flushing and disabling pf..."
+  echo "[*] Disabling Packet Filter and removing rules..."
   sudo pfctl -F all
   sudo pfctl -d
 
-  echo "[*] Removing NAT config..."
+  echo "[*] Removing custom NAT config and restoring default PF configuration..."
   sudo rm -f "$PF_ANCHOR"
   sudo cp /etc/pf.conf.default "$PF_CONF" 2>/dev/null || echo "scrub in all" | sudo tee "$PF_CONF"
 
-  echo "[✔] ICS has been disabled and cleaned up."
+
+  echo "[✔] ICS has been disabled."
 }
 
 function show_menu {
@@ -184,6 +228,5 @@ function show_menu {
   esac
 }
 
-# Entry point
+# Entry
 show_menu
-
