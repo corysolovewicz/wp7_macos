@@ -91,26 +91,6 @@ function start_ics {
   fi
   echo "[+] Pineapple interface: $PINEAPPLE_IF"
 
-  echo "[*] Detecting VPN interface from default route..."
-  VPN_IF=$(detect_vpn_interface)
-  if [[ -z "$VPN_IF" ]]; then
-    echo "[!] Could not detect VPN interface. Is VPN connected?"
-    return
-  fi
-  echo "[+] Detected uplink interface: $VPN_IF"
-
-  # VPN enforcement with override
-  if ! [[ "$VPN_IF" =~ ^(utun|ipsec) ]]; then
-    echo "[!] Warning: Uplink interface is not a tunnel (VPN is likely not active)."
-    echo "    Detected interface: $VPN_IF"
-    read -rp "    Continue anyway? [y/N]: " override
-    override=$(echo "$override" | tr '[:upper:]' '[:lower:]')
-    if [[ "$override" != "y" ]]; then
-      echo "[x] Aborting ICS setup."
-      return
-    fi
-  fi
-
   echo "[*] Finding network service for Pineapple interface..."
   PINEAPPLE_SERVICE=$(networksetup -listnetworkserviceorder | \
     grep -B1 "Device: $PINEAPPLE_IF" | head -1 | sed -E 's/^.*\) (.*)$/\1/')
@@ -152,8 +132,30 @@ function start_ics {
     echo "[*] Executing: $ORDER_CMD"
     if eval "$ORDER_CMD"; then
       echo "[+] Network services reordered successfully."
+      echo "[*] Waiting for routing to update..."
+      sleep 5
     else
       echo "[!] Failed to reorder network services. Check service names manually."
+    fi
+  fi
+
+  echo "[*] Detecting VPN interface from default route..."
+  VPN_IF=$(detect_vpn_interface)
+  if [[ -z "$VPN_IF" ]]; then
+    echo "[!] Could not detect VPN interface. Is VPN connected?"
+    return
+  fi
+  echo "[+] Detected uplink interface: $VPN_IF"
+
+  # VPN enforcement with override
+  if ! [[ "$VPN_IF" =~ ^(utun|ipsec) ]]; then
+    echo "[!] Warning: Uplink interface is not a tunnel (VPN is likely not active)."
+    echo "    Detected interface: $VPN_IF"
+    read -rp "    Continue anyway? [y/N]: " override
+    override=$(echo "$override" | tr '[:upper:]' '[:lower:]')
+    if [[ "$override" != "y" ]]; then
+      echo "[x] Aborting ICS setup."
+      return
     fi
   fi
 
