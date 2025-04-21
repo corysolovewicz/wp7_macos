@@ -59,7 +59,7 @@ You’ll be presented with a menu to:
 - Quit
 
 ## 🎬 Demo
-![wp7_macos.sh Demo](demo.gif)
+![wp7_macos.sh Demo](wp7_macos_demo.gif)
 
 ---
 
