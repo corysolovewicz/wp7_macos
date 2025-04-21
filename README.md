@@ -58,6 +58,9 @@ You’ll be presented with a menu to:
 - Stop / undo all changes  
 - Quit
 
+## 🎬 Demo
+![wp7_macos.sh Demo](demo.gif)
+
 ---
 
 ## 🎯 When to Use
