@@ -24,7 +24,7 @@ function banner {
         echo "   | | /| / / / /_  / /  / /_/ / / __ \/ _ \/ __ '/ __ \/ __ \/ / _ \\";
         echo "   | |/ |/ / / __/ / /  / ____/ / / / /  __/ /_/ / /_/ / /_/ / /  __/ ";
         echo "   |__/|__/_/_/   /_/  /_/   /_/_/ /_/\___/\__,_/ .___/ .___/_/\___/  ";
-        echo "                                $(tput setaf 3)/_/   /_/$(tput sgr0)v$wpver";
+        echo "                                               $(tput setaf 3)/_/   /_/$(tput sgr0)v$wpver";
         ;;
         2)
         echo $(tput setaf 3)
